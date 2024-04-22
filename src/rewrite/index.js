@@ -2,7 +2,7 @@ import HTML from './html.js';
 import CSS from './css.js';
 import JS from './js.js';
 import setCookie from 'set-cookie-parser';
-import { xor, base64, plain } from './codecs.js';
+import { xor, base64, plain, aes } from './codecs.js';
 import * as mimeTypes from './mime.js';
 import {
     validateCookie,
@@ -34,7 +34,7 @@ import {
     wrapEval,
 } from './rewrite.script.js';
 import { openDB } from 'idb';
-import BareClient from '@tomphttp/bare-client';
+import BareClient from '@mercuryworkshop/bare-mux';
 import EventEmitter from 'events';
 
 /**
@@ -51,6 +51,7 @@ class Ultraviolet {
         //this.urlRegex = /^(#|about:|data:|mailto:|javascript:)/;
         this.urlRegex = /^(#|about:|data:|mailto:)/;
         this.rewriteUrl = options.rewriteUrl || this.rewriteUrl;
+        this.rewriteImport = options.rewriteImport || this.rewriteImport;
         this.sourceUrl = options.sourceUrl || this.sourceUrl;
         this.encodeUrl = options.encodeUrl || this.encodeUrl;
         this.decodeUrl = options.decodeUrl || this.decodeUrl;
@@ -96,6 +97,19 @@ class Ultraviolet {
             serialize,
             setCookie,
         };
+    }
+    /**
+     *
+     * @param {string} str Script being imported
+     * @param {string} src Script that is importing
+     * @param {*} meta
+     */
+    rewriteImport(str, src, meta = this.meta) {
+        // use importiing script as the base
+        return this.rewriteUrl(str, {
+            ...meta,
+            base: src,
+        });
     }
     rewriteUrl(str, meta = this.meta) {
         str = new String(str).trim();
@@ -172,7 +186,7 @@ class Ultraviolet {
     get sourceJS() {
         return this.js.source.bind(this.js);
     }
-    static codec = { xor, base64, plain };
+    static codec = { xor, base64, plain, aes };
     static mime = mimeTypes;
     static setCookie = setCookie;
     static openDB = openDB;

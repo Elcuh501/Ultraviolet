@@ -24,12 +24,29 @@ Some of the popular websites that Ultraviolet supports include:
 
 ## Used by
 
+-   [Alu](https://github.com/titaniumnetwork-dev/Alu)
+-   [AnuraOS](https://github.com/MercuryWorkshop/anuraOS)
+-   [Nebula](https://github.com/NebulaServices/Nebula)
 -   [Holy Unblocker](https://github.com/holy-unblocker/website)
--   [Hypertabs](https://hypertabs.cc/)
 -   [Terbium](https://github.com/TerbiumOS/webOS)
 -   [Incognito](https://github.com/caracal-js/Incognito)
--   [Nebula](https://github.com/NebulaServices/Nebula)
 -   [Metallic](https://github.com/Metallic-Web/Metallic)
+
+## Upgrading
+
+A guide for updating from any version to v3 can be found [here](https://github.com/titaniumnetwork-dev/Ultraviolet/wiki/Upgrading).
+
+## Older Ultraviolet versions
+
+Starting from v3, Ultraviolet uses [bare-mux](https://github.com/MercuryWorkshop/bare-mux), a library that allows you to switch out your Bare client.
+
+If you operate using an older Ultraviolet, we encourage you to update.
+
+If you're too lazy to do either of the above, you can install an outdated and unsupported version of Ultraviolet.
+
+```sh
+npm install @titaniumnetwork-dev/ultraviolet@1
+```
 
 ## Changelog
 

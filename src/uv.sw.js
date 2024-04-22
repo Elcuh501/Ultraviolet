@@ -3,7 +3,7 @@
 // This is to allow us to produce a generic bundle with no hard-coded paths.
 
 /**
- * @type {import('./uv').UltravioletCtor}
+ * @type {import('../uv').UltravioletCtor}
  */
 const Ultraviolet = self.Ultraviolet;
 
@@ -40,7 +40,7 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
         /**
          * @type {InstanceType<Ultraviolet['BareClient']>}
          */
-        this.bareClient = new Ultraviolet.BareClient(this.address);
+        this.bareClient = new Ultraviolet.BareClient();
     }
     /**
      *
@@ -136,6 +136,8 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                         : requestCtx.mode,
                 cache: requestCtx.cache,
                 redirect: requestCtx.redirect,
+                proxyIp: this.config.proxyIp,
+                proxyPort: this.config.proxyPort,
             });
 
             const responseCtx = new ResponseContext(requestCtx, response);
@@ -157,12 +159,6 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
             // downloads
             if (request.destination === 'document') {
                 const header = responseCtx.headers['content-disposition'];
-
-                console.log(
-                    { header },
-                    /filename=/i.test(header),
-                    /^\s*?attachment/i.test(header)
-                );
 
                 // validate header and test for filename
                 if (!/\s*?((inline|attachment);\s*?)filename=/i.test(header)) {
@@ -191,8 +187,8 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                         ultraviolet.meta
                     )
                 ).then(() => {
-                    self.clients.matchAll().then(function (clients) {
-                        clients.forEach(function (client) {
+                    self.clients.matchAll().then(function(clients) {
+                        clients.forEach(function(client) {
                             client.postMessage({
                                 msg: 'updateCookies',
                                 url: ultraviolet.meta.url.href,
@@ -219,7 +215,7 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                                 .join(',');
                             responseCtx.body = `if (!self.__uv && self.importScripts) { ${ultraviolet.createJsInject(
                                 this.address,
-                                this.bareClient.data,
+                                this.bareClient.manfiest,
                                 ultraviolet.cookie.serialize(
                                     cookies,
                                     ultraviolet.meta,
@@ -255,7 +251,7 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                                         ultraviolet.clientScript,
                                         ultraviolet.configScript,
                                         this.address,
-                                        this.bareClient.data,
+                                        this.bareClient.manfiest,
                                         ultraviolet.cookie.serialize(
                                             cookies,
                                             ultraviolet.meta,
@@ -271,6 +267,10 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
 
             if (requestCtx.headers.accept === 'text/event-stream') {
                 responseCtx.headers['content-type'] = 'text/event-stream';
+            }
+            if (crossOriginIsolated) {
+                responseCtx.headers['Cross-Origin-Embedder-Policy'] =
+                    'require-corp';
             }
 
             this.emit('response', resEvent);
@@ -415,6 +415,9 @@ function hostnameErrorTemplate(fetchedURL, bareServer) {
         '<head>' +
         "<meta charset='utf-8' />" +
         '<title>Error</title>' +
+        '<style>' +
+        '* { background-color: white }' +
+        '</style>' +
         '</head>' +
         '<body>' +
         '<h1>This site can’t be reached</h1>' +
@@ -430,8 +433,7 @@ function hostnameErrorTemplate(fetchedURL, bareServer) {
         '<button id="reload">Reload</button>' +
         '<hr />' +
         '<p><i>Ultraviolet v<span id="uvVersion"></span></i></p>' +
-        `<script src="${
-            'data:application/javascript,' + encodeURIComponent(script)
+        `<script src="${'data:application/javascript,' + encodeURIComponent(script)
         }"></script>` +
         '</body>' +
         '</html>'
@@ -485,6 +487,9 @@ function errorTemplate(
         '<head>' +
         "<meta charset='utf-8' />" +
         '<title>Error</title>' +
+        '<style>' +
+        '* { background-color: white }' +
+        '</style>' +
         '</head>' +
         '<body>' +
         "<h1 id='errorTitle'></h1>" +
@@ -508,13 +513,12 @@ function errorTemplate(
         '<ul>' +
         '<li>Restarting your Bare server</li>' +
         '<li>Updating Ultraviolet</li>' +
-        '<li>Troubleshooting the error on the <a href="https://github.com/titaniumnetwork-dev/Ultraviolet">GitHub repository</a></li>' +
+        '<li>Troubleshooting the error on the <a href="https://github.com/titaniumnetwork-dev/Ultraviolet" target="_blank">GitHub repository</a></li>' +
         '</ul>' +
         '<button id="reload">Reload</button>' +
         '<hr />' +
         '<p><i>Ultraviolet v<span id="uvVersion"></span></i></p>' +
-        `<script src="${
-            'data:application/javascript,' + encodeURIComponent(script)
+        `<script src="${'data:application/javascript,' + encodeURIComponent(script)
         }"></script>` +
         '</body>' +
         '</html>'
@@ -558,7 +562,12 @@ function renderError(err, fetchedURL, bareServer) {
      * @type {string}
      */
     let message;
-
+    let headers = {
+        'content-type': 'text/html',
+    };
+    if (crossOriginIsolated) {
+        headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
+    }
     if (isBareError(err)) {
         status = err.status;
         title = 'Error communicating with the Bare server';
@@ -584,9 +593,7 @@ function renderError(err, fetchedURL, bareServer) {
         ),
         {
             status,
-            headers: {
-                'content-type': 'text/html',
-            },
+            headers: headers,
         }
     );
 }
