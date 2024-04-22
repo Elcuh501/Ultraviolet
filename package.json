@@ -41,8 +41,8 @@
         "webpack-cli": "^5.0.0"
 
           "scripts": {
-        "prebuild": "cross-env NODE_ENV=production webpack-cli",
-        "dev": "cross-env NODE_ENV=development webpack-cli",
+        "postbuild": "cross-env NODE_ENV=production webpack-cli",
+        "postdev": "cross-env NODE_ENV=development webpack-cli",
         "postwatch": "cross-env NODE_ENV=development webpack-cli --watch"
     }
 }
